@@ -29,6 +29,7 @@
 /* USER CODE BEGIN Includes */
 
 #include <string.h>
+#include "i2c_techmaker_sm.h"
 
 /* USER CODE END Includes */
 
@@ -57,6 +58,8 @@
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
+void I2C_ScanBusFlow(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -72,8 +75,21 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
+	#define ADR_I2C_DS3231 0x68
+
 	char DataChar[100];
 	uint32_t counter_u32 = 0;
+
+	RTC_TimeTypeDef TimeSt;
+	RTC_DateTypeDef DateSt;
+
+	uint8_t DS3231_Seconds;
+	uint8_t DS3231_Minutes;
+	uint8_t DS3231_Hours;
+	uint8_t DS3231_WeekDay;
+	uint8_t DS3231_Date;
+	uint8_t DS3231_Mouth;
+	uint8_t DS3231_Year;
 
   /* USER CODE END 1 */
   
@@ -102,6 +118,56 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 	sprintf(DataChar,"\r\nDS3231_RTC_f103-19 v0.1.0\r\nUART1 for debug started on speed 115200\r\n");
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	I2Cdev_init(&hi2c1);
+	I2C_ScanBusFlow();
+
+	I2Cdev_readByte( ADR_I2C_DS3231, 0x00, &DS3231_Seconds, 100);
+	I2Cdev_readByte( ADR_I2C_DS3231, 0x01, &DS3231_Minutes, 100);
+	I2Cdev_readByte( ADR_I2C_DS3231, 0x02, &DS3231_Hours,   100);
+	I2Cdev_readByte( ADR_I2C_DS3231, 0x03, &DS3231_WeekDay, 100);
+	I2Cdev_readByte( ADR_I2C_DS3231, 0x04, &DS3231_Date,    100);
+	I2Cdev_readByte( ADR_I2C_DS3231, 0x05, &DS3231_Mouth,   100);
+	I2Cdev_readByte( ADR_I2C_DS3231, 0x06, &DS3231_Year,    100);
+
+	TimeSt.Hours   = DS3231_Hours   / 16*10 + DS3231_Hours   %16;
+	TimeSt.Minutes = DS3231_Minutes / 16*10 + DS3231_Minutes %16;
+	TimeSt.Seconds = DS3231_Seconds / 16*10 + DS3231_Seconds %16;
+	DateSt.WeekDay = DS3231_WeekDay / 16*10 + DS3231_WeekDay %16;
+	DateSt.Date    = DS3231_Date    / 16*10 + DS3231_Date    %16;
+	DateSt.Month   = DS3231_Mouth   / 16*10 + DS3231_Mouth   %16;
+	DateSt.Year    = DS3231_Year    / 16*10 + DS3231_Year    %16;
+
+	sprintf(DataChar,"%02d:%02d:%02d ",TimeSt.Hours,TimeSt.Minutes,TimeSt.Seconds);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	sprintf(DataChar,"%04d/%02d/%02d\r\n",2000+DateSt.Year, DateSt.Month, DateSt.Date);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	HAL_RTC_SetTime( &hrtc, &TimeSt, RTC_FORMAT_BIN );
+	HAL_RTC_SetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
+
+	HAL_Delay(500);
+	HAL_RTC_GetTime( &hrtc, &TimeSt, RTC_FORMAT_BIN );
+	sprintf(DataChar,"%02d:%02d:%02d ",TimeSt.Hours,TimeSt.Minutes,TimeSt.Seconds);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	HAL_RTC_GetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
+	sprintf(DataChar,"%04d/%02d/%02d\r\n",2000+DateSt.Year, DateSt.Month, DateSt.Date);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	switch(DateSt.WeekDay)
+		{
+		case  7: sprintf(DataChar,"Sunday"); 		break;
+		case  1: sprintf(DataChar,"Monday");		break;
+		case  2: sprintf(DataChar,"Tuesday"); 		break;
+		case  3: sprintf(DataChar,"Wednesday");		break;
+		case  4: sprintf(DataChar,"Thursday");		break;
+		case  5: sprintf(DataChar,"Friday");		break;
+		case  6: sprintf(DataChar,"Saturday");		break;
+		default: sprintf(DataChar,"Out of day");	break;
+		} // end switch Date.ST
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
   /* USER CODE END 2 */
@@ -170,6 +236,42 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+//======================================================================
+void I2C_ScanBusFlow(void)
+{
+	char DataChar_I2C[32];
+	int device_serial_numb = 0;
+
+	sprintf(DataChar_I2C,"Start scan I2C\r\n");
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar_I2C, strlen(DataChar_I2C), 100);
+	HAL_Delay(100);
+
+	for ( int sbf = 0x07; sbf < 0x78; sbf++) {
+		if (HAL_I2C_IsDeviceReady(&hi2c1, sbf << 1, 10, 100) == HAL_OK)
+			{
+			device_serial_numb++;
+			switch (sbf)
+			{
+				case 0x23: sprintf(DataChar_I2C,"%d) BH-1750", device_serial_numb ); break;
+				case 0x27: sprintf(DataChar_I2C,"%d) FC-113 ", device_serial_numb ); break;
+				case 0x57: sprintf(DataChar_I2C,"%d) AT24C32", device_serial_numb ); break;
+				case 0x68: sprintf(DataChar_I2C,"%d) DS-3231", device_serial_numb ); break;
+				//case 0x68: sprintf(DataChar_I2C,"%d) MPU9250", device_serial_numb ); break;
+				case 0x76: sprintf(DataChar_I2C,"%d) BMP-280", device_serial_numb ); break;
+				case 0x77: sprintf(DataChar_I2C,"%d) BMP-180", device_serial_numb ); break;
+				default:   sprintf(DataChar_I2C,"%d) Unknown", device_serial_numb ); break;
+			}// end switch
+			sprintf(DataChar_I2C,"%s\r\n",DataChar_I2C);
+			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar_I2C, strlen(DataChar_I2C), 100);
+			HAL_Delay(10);
+		} //end if HAL I2C1
+	} // end for sbf i2c1
+	sprintf(DataChar_I2C,"End scan I2C\r\n");
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar_I2C, strlen(DataChar_I2C), 100);
+	HAL_Delay(100);
+}// end void I2C_ScanBus
+//======================================================================
 
 /* USER CODE END 4 */
 
