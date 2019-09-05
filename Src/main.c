@@ -83,13 +83,13 @@ int main(void)
 	RTC_TimeTypeDef TimeSt;
 	RTC_DateTypeDef DateSt;
 
-	uint8_t DS3231_Seconds;
-	uint8_t DS3231_Minutes;
-	uint8_t DS3231_Hours;
-	uint8_t DS3231_WeekDay;
-	uint8_t DS3231_Date;
-	uint8_t DS3231_Mouth;
-	uint8_t DS3231_Year;
+	uint8_t DS3231_Seconds = 53;
+	uint8_t DS3231_Minutes = 86;
+	uint8_t DS3231_Hours = 14;
+	uint8_t DS3231_WeekDay = 4;
+	uint8_t DS3231_Date = 5;
+	uint8_t DS3231_Mouth = 9;
+	uint8_t DS3231_Year = 25;
 
   /* USER CODE END 1 */
   
@@ -122,6 +122,19 @@ int main(void)
 
 	I2Cdev_init(&hi2c1);
 	I2C_ScanBusFlow();
+
+/*
+
+	I2Cdev_writeByte( ADR_I2C_DS3231, 0x00, DS3231_Seconds );
+	I2Cdev_writeByte( ADR_I2C_DS3231, 0x01, DS3231_Minutes );
+	I2Cdev_writeByte( ADR_I2C_DS3231, 0x02, DS3231_Hours   );
+	I2Cdev_writeByte( ADR_I2C_DS3231, 0x03, DS3231_WeekDay );
+	I2Cdev_writeByte( ADR_I2C_DS3231, 0x04, DS3231_Date    );
+	I2Cdev_writeByte( ADR_I2C_DS3231, 0x05, DS3231_Mouth   );
+	I2Cdev_writeByte( ADR_I2C_DS3231, 0x06, DS3231_Year    );
+	HAL_Delay(100);
+
+*/
 
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x00, &DS3231_Seconds, 100);
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x01, &DS3231_Minutes, 100);
@@ -170,6 +183,8 @@ int main(void)
 		} // end switch Date.ST
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
+	sprintf(DataChar,"\r\n");
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
