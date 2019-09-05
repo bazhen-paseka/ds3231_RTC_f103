@@ -83,13 +83,13 @@ int main(void)
 	RTC_TimeTypeDef TimeSt;
 	RTC_DateTypeDef DateSt;
 
-	uint8_t DS3231_Seconds = 53;
-	uint8_t DS3231_Minutes = 86;
-	uint8_t DS3231_Hours = 14;
-	uint8_t DS3231_WeekDay = 4;
-	uint8_t DS3231_Date = 5;
-	uint8_t DS3231_Mouth = 9;
-	uint8_t DS3231_Year = 25;
+	uint8_t DS3231_Seconds = 0x05;
+	uint8_t DS3231_Minutes = 0x26;
+	uint8_t DS3231_Hours   = 0x16;
+	uint8_t DS3231_WeekDay = 0x04;
+	uint8_t DS3231_Date    = 0x05;
+	uint8_t DS3231_Mouth   = 0x09;
+	uint8_t DS3231_Year    = 0x19;
 
   /* USER CODE END 1 */
   
@@ -123,17 +123,21 @@ int main(void)
 	I2Cdev_init(&hi2c1);
 	I2C_ScanBusFlow();
 
+//
+//	I2Cdev_writeByte( ADR_I2C_DS3231, 0x00, DS3231_Seconds );
+//	I2Cdev_writeByte( ADR_I2C_DS3231, 0x01, DS3231_Minutes );
+//	I2Cdev_writeByte( ADR_I2C_DS3231, 0x02, DS3231_Hours   );
+//	I2Cdev_writeByte( ADR_I2C_DS3231, 0x03, DS3231_WeekDay );
+//	I2Cdev_writeByte( ADR_I2C_DS3231, 0x04, DS3231_Date    );
+//	I2Cdev_writeByte( ADR_I2C_DS3231, 0x05, DS3231_Mouth   );
+//	I2Cdev_writeByte( ADR_I2C_DS3231, 0x06, DS3231_Year    );
+//	HAL_Delay(100);
+//
+
 /*
-
-	I2Cdev_writeByte( ADR_I2C_DS3231, 0x00, DS3231_Seconds );
-	I2Cdev_writeByte( ADR_I2C_DS3231, 0x01, DS3231_Minutes );
-	I2Cdev_writeByte( ADR_I2C_DS3231, 0x02, DS3231_Hours   );
-	I2Cdev_writeByte( ADR_I2C_DS3231, 0x03, DS3231_WeekDay );
-	I2Cdev_writeByte( ADR_I2C_DS3231, 0x04, DS3231_Date    );
-	I2Cdev_writeByte( ADR_I2C_DS3231, 0x05, DS3231_Mouth   );
-	I2Cdev_writeByte( ADR_I2C_DS3231, 0x06, DS3231_Year    );
-	HAL_Delay(100);
-
+	Number 123
+	Binary Form 01111011
+	BCD will be 0001 0010 0011
 */
 
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x00, &DS3231_Seconds, 100);
@@ -144,13 +148,23 @@ int main(void)
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x05, &DS3231_Mouth,   100);
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x06, &DS3231_Year,    100);
 
-	TimeSt.Hours   = DS3231_Hours   / 16*10 + DS3231_Hours   %16;
+/*
+ *  TimeSt.Hours   = DS3231_Hours   / 16*10 + DS3231_Hours   %16;
 	TimeSt.Minutes = DS3231_Minutes / 16*10 + DS3231_Minutes %16;
 	TimeSt.Seconds = DS3231_Seconds / 16*10 + DS3231_Seconds %16;
 	DateSt.WeekDay = DS3231_WeekDay / 16*10 + DS3231_WeekDay %16;
 	DateSt.Date    = DS3231_Date    / 16*10 + DS3231_Date    %16;
 	DateSt.Month   = DS3231_Mouth   / 16*10 + DS3231_Mouth   %16;
 	DateSt.Year    = DS3231_Year    / 16*10 + DS3231_Year    %16;
+*/
+
+	TimeSt.Hours   = (DS3231_Hours   >> 4)*10 + (DS3231_Hours   &0x0F);
+	TimeSt.Minutes = (DS3231_Minutes >> 4)*10 + (DS3231_Minutes &0x0F);
+	TimeSt.Seconds = (DS3231_Seconds >> 4)*10 + (DS3231_Seconds &0x0F);
+	DateSt.WeekDay = (DS3231_WeekDay >> 4)*10 + (DS3231_WeekDay &0x0F);
+	DateSt.Date    = (DS3231_Date    >> 4)*10 + (DS3231_Date    &0x0F);
+	DateSt.Month   = (DS3231_Mouth   >> 4)*10 + (DS3231_Mouth   &0x0F);
+	DateSt.Year    = (DS3231_Year    >> 4)*10 + (DS3231_Year    &0x0F);
 
 	sprintf(DataChar,"%02d:%02d:%02d ",TimeSt.Hours,TimeSt.Minutes,TimeSt.Seconds);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -167,7 +181,7 @@ int main(void)
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	HAL_RTC_GetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
-	sprintf(DataChar,"%04d/%02d/%02d\r\n",2000+DateSt.Year, DateSt.Month, DateSt.Date);
+	sprintf(DataChar,"%04d/%02d/%02d ",2000+DateSt.Year, DateSt.Month, DateSt.Date);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	switch(DateSt.WeekDay)
@@ -191,12 +205,33 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	sprintf(DataChar,"%d\r\n",  (int)counter_u32 );
+	sprintf(DataChar,"%d) ",  (int)counter_u32 );
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 	counter_u32++;
 
 	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
-	HAL_Delay(1000);
+
+	HAL_RTC_GetTime( &hrtc, &TimeSt, RTC_FORMAT_BIN );
+	sprintf(DataChar,"%02d:%02d:%02d ",TimeSt.Hours,TimeSt.Minutes,TimeSt.Seconds);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	HAL_RTC_GetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
+	sprintf(DataChar,"%04d/%02d/%02d ",2000+DateSt.Year, DateSt.Month, DateSt.Date);
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+
+	switch(DateSt.WeekDay)
+		{
+		case  7: sprintf(DataChar,"Sunday\r\n"); 		break;
+		case  1: sprintf(DataChar,"Monday\r\n");		break;
+		case  2: sprintf(DataChar,"Tuesday\r\n"); 		break;
+		case  3: sprintf(DataChar,"Wednesday\r\n");		break;
+		case  4: sprintf(DataChar,"Thursday\r\n");		break;
+		case  5: sprintf(DataChar,"Friday\r\n");		break;
+		case  6: sprintf(DataChar,"Saturday\r\n");		break;
+		default: sprintf(DataChar,"Out of day\r\n");	break;
+		} // end switch Date.ST
+	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+	HAL_Delay(3000);
 
     /* USER CODE END WHILE */
 
