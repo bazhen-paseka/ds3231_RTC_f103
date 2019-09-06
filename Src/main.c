@@ -30,6 +30,7 @@
 
 #include <string.h>
 #include "i2c_techmaker_sm.h"
+#include "ds3231_sm.h"
 
 /* USER CODE END Includes */
 
@@ -81,13 +82,13 @@ int main(void)
 	RTC_TimeTypeDef TimeSt;
 	RTC_DateTypeDef DateSt;
 
-	uint8_t DS3231_Seconds = 0x05;
-	uint8_t DS3231_Minutes = 0x26;
-	uint8_t DS3231_Hours   = 0x16;
-	uint8_t DS3231_WeekDay = 0x04;
-	uint8_t DS3231_Date    = 0x05;
-	uint8_t DS3231_Mouth   = 0x09;
-	uint8_t DS3231_Year    = 0x19;
+//	uint8_t DS3231_Seconds = 0x05;
+//	uint8_t DS3231_Minutes = 0x26;
+//	uint8_t DS3231_Hours   = 0x16;
+//	uint8_t DS3231_WeekDay = 0x04;
+//	uint8_t DS3231_Date    = 0x05;
+//	uint8_t DS3231_Mouth   = 0x09;
+//	uint8_t DS3231_Year    = 0x19;
 
   /* USER CODE END 1 */
   
@@ -115,11 +116,15 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
+	ds3231_struct h1_ds3231 =
+	{
+		.i2c_adr = ADR_I2C_DS3231
+	};
+
 	sprintf(DataChar,"\r\nDS3231_RTC_f103-19 v0.2.0\r\nUART1 for debug started on speed 115200\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
-	I2Cdev_init(&hi2c1);
-	I2C_ScanBusFlow(&hi2c1 , &huart1);
+
 
 //	I2Cdev_writeByte( ADR_I2C_DS3231, 0x00, DS3231_Seconds );
 //	I2Cdev_writeByte( ADR_I2C_DS3231, 0x01, DS3231_Minutes );
@@ -136,21 +141,26 @@ int main(void)
 //	BCD will be 0001 0010 0011
 
 
-	I2Cdev_readByte( ADR_I2C_DS3231, 0x00, &DS3231_Seconds, 100);
-	I2Cdev_readByte( ADR_I2C_DS3231, 0x01, &DS3231_Minutes, 100);
-	I2Cdev_readByte( ADR_I2C_DS3231, 0x02, &DS3231_Hours,   100);
-	I2Cdev_readByte( ADR_I2C_DS3231, 0x03, &DS3231_WeekDay, 100);
-	I2Cdev_readByte( ADR_I2C_DS3231, 0x04, &DS3231_Date,    100);
-	I2Cdev_readByte( ADR_I2C_DS3231, 0x05, &DS3231_Mouth,   100);
-	I2Cdev_readByte( ADR_I2C_DS3231, 0x06, &DS3231_Year,    100);
+//	I2Cdev_readByte( ADR_I2C_DS3231, 0x00, &DS3231_Seconds, 100);
+//	I2Cdev_readByte( ADR_I2C_DS3231, 0x01, &DS3231_Minutes, 100);
+//	I2Cdev_readByte( ADR_I2C_DS3231, 0x02, &DS3231_Hours,   100);
+//	I2Cdev_readByte( ADR_I2C_DS3231, 0x03, &DS3231_WeekDay, 100);
+//	I2Cdev_readByte( ADR_I2C_DS3231, 0x04, &DS3231_Date,    100);
+//	I2Cdev_readByte( ADR_I2C_DS3231, 0x05, &DS3231_Mouth,   100);
+//	I2Cdev_readByte( ADR_I2C_DS3231, 0x06, &DS3231_Year,    100);
+//
+//	TimeSt.Hours   = (DS3231_Hours   >> 4)*10 + (DS3231_Hours   &0x0F);
+//	TimeSt.Minutes = (DS3231_Minutes >> 4)*10 + (DS3231_Minutes &0x0F);
+//	TimeSt.Seconds = (DS3231_Seconds >> 4)*10 + (DS3231_Seconds &0x0F);
+//	DateSt.WeekDay = (DS3231_WeekDay >> 4)*10 + (DS3231_WeekDay &0x0F);
+//	DateSt.Date    = (DS3231_Date    >> 4)*10 + (DS3231_Date    &0x0F);
+//	DateSt.Month   = (DS3231_Mouth   >> 4)*10 + (DS3231_Mouth   &0x0F);
+//	DateSt.Year    = (DS3231_Year    >> 4)*10 + (DS3231_Year    &0x0F);
 
-	TimeSt.Hours   = (DS3231_Hours   >> 4)*10 + (DS3231_Hours   &0x0F);
-	TimeSt.Minutes = (DS3231_Minutes >> 4)*10 + (DS3231_Minutes &0x0F);
-	TimeSt.Seconds = (DS3231_Seconds >> 4)*10 + (DS3231_Seconds &0x0F);
-	DateSt.WeekDay = (DS3231_WeekDay >> 4)*10 + (DS3231_WeekDay &0x0F);
-	DateSt.Date    = (DS3231_Date    >> 4)*10 + (DS3231_Date    &0x0F);
-	DateSt.Month   = (DS3231_Mouth   >> 4)*10 + (DS3231_Mouth   &0x0F);
-	DateSt.Year    = (DS3231_Year    >> 4)*10 + (DS3231_Year    &0x0F);
+	I2Cdev_init(&hi2c1);
+	I2C_ScanBusFlow(&hi2c1, &huart1);
+
+	ds3231_GetTime(&h1_ds3231, &TimeSt, &DateSt, &huart1);
 
 	sprintf(DataChar,"%02d:%02d:%02d ",TimeSt.Hours,TimeSt.Minutes,TimeSt.Seconds);
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
@@ -217,7 +227,7 @@ int main(void)
 		default: sprintf(DataChar,"Out of day\r\n");	break;
 		} // end switch Date.ST
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-	HAL_Delay(3000);
+	HAL_Delay(5000);
 
     /* USER CODE END WHILE */
 
