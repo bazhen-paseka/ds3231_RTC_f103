@@ -58,8 +58,6 @@
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
-void I2C_ScanBusFlow(void);
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -117,13 +115,12 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-	sprintf(DataChar,"\r\nDS3231_RTC_f103-19 v0.1.0\r\nUART1 for debug started on speed 115200\r\n");
+	sprintf(DataChar,"\r\nDS3231_RTC_f103-19 v0.2.0\r\nUART1 for debug started on speed 115200\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	I2Cdev_init(&hi2c1);
-	I2C_ScanBusFlow();
+	I2C_ScanBusFlow(&hi2c1 , &huart1);
 
-//
 //	I2Cdev_writeByte( ADR_I2C_DS3231, 0x00, DS3231_Seconds );
 //	I2Cdev_writeByte( ADR_I2C_DS3231, 0x01, DS3231_Minutes );
 //	I2Cdev_writeByte( ADR_I2C_DS3231, 0x02, DS3231_Hours   );
@@ -132,13 +129,12 @@ int main(void)
 //	I2Cdev_writeByte( ADR_I2C_DS3231, 0x05, DS3231_Mouth   );
 //	I2Cdev_writeByte( ADR_I2C_DS3231, 0x06, DS3231_Year    );
 //	HAL_Delay(100);
-//
 
-/*
-	Number 123
-	Binary Form 01111011
-	BCD will be 0001 0010 0011
-*/
+
+//	Number 123
+//	Binary Form 01111011
+//	BCD will be 0001 0010 0011
+
 
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x00, &DS3231_Seconds, 100);
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x01, &DS3231_Minutes, 100);
@@ -147,16 +143,6 @@ int main(void)
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x04, &DS3231_Date,    100);
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x05, &DS3231_Mouth,   100);
 	I2Cdev_readByte( ADR_I2C_DS3231, 0x06, &DS3231_Year,    100);
-
-/*
- *  TimeSt.Hours   = DS3231_Hours   / 16*10 + DS3231_Hours   %16;
-	TimeSt.Minutes = DS3231_Minutes / 16*10 + DS3231_Minutes %16;
-	TimeSt.Seconds = DS3231_Seconds / 16*10 + DS3231_Seconds %16;
-	DateSt.WeekDay = DS3231_WeekDay / 16*10 + DS3231_WeekDay %16;
-	DateSt.Date    = DS3231_Date    / 16*10 + DS3231_Date    %16;
-	DateSt.Month   = DS3231_Mouth   / 16*10 + DS3231_Mouth   %16;
-	DateSt.Year    = DS3231_Year    / 16*10 + DS3231_Year    %16;
-*/
 
 	TimeSt.Hours   = (DS3231_Hours   >> 4)*10 + (DS3231_Hours   &0x0F);
 	TimeSt.Minutes = (DS3231_Minutes >> 4)*10 + (DS3231_Minutes &0x0F);
@@ -252,11 +238,11 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
@@ -278,7 +264,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -287,41 +273,6 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-//======================================================================
-void I2C_ScanBusFlow(void)
-{
-	char DataChar_I2C[32];
-	int device_serial_numb = 0;
-
-	sprintf(DataChar_I2C,"Start scan I2C\r\n");
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar_I2C, strlen(DataChar_I2C), 100);
-	HAL_Delay(100);
-
-	for ( int sbf = 0x07; sbf < 0x78; sbf++) {
-		if (HAL_I2C_IsDeviceReady(&hi2c1, sbf << 1, 10, 100) == HAL_OK)
-			{
-			device_serial_numb++;
-			switch (sbf)
-			{
-				case 0x23: sprintf(DataChar_I2C,"%d) BH-1750", device_serial_numb ); break;
-				case 0x27: sprintf(DataChar_I2C,"%d) FC-113 ", device_serial_numb ); break;
-				case 0x57: sprintf(DataChar_I2C,"%d) AT24C32", device_serial_numb ); break;
-				case 0x68: sprintf(DataChar_I2C,"%d) DS-3231", device_serial_numb ); break;
-				//case 0x68: sprintf(DataChar_I2C,"%d) MPU9250", device_serial_numb ); break;
-				case 0x76: sprintf(DataChar_I2C,"%d) BMP-280", device_serial_numb ); break;
-				case 0x77: sprintf(DataChar_I2C,"%d) BMP-180", device_serial_numb ); break;
-				default:   sprintf(DataChar_I2C,"%d) Unknown", device_serial_numb ); break;
-			}// end switch
-			sprintf(DataChar_I2C,"%s\r\n",DataChar_I2C);
-			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar_I2C, strlen(DataChar_I2C), 100);
-			HAL_Delay(10);
-		} //end if HAL I2C1
-	} // end for sbf i2c1
-	sprintf(DataChar_I2C,"End scan I2C\r\n");
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar_I2C, strlen(DataChar_I2C), 100);
-	HAL_Delay(100);
-}// end void I2C_ScanBus
-//======================================================================
 
 /* USER CODE END 4 */
 
