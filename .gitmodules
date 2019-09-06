@@ -1,0 +1,3 @@
+[submodule "Drivers/i2c_techmaker_sm"]
+	path = Drivers/i2c_techmaker_sm
+	url = https://github.com/bazhen-paseka/i2c_TechMaker_sm.git
