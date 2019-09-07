@@ -64,6 +64,8 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+volatile uint8_t ds3231_alarm_u8 = 0 ;
+
 /* USER CODE END 0 */
 
 /**
@@ -107,7 +109,7 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-	sprintf(DataChar,"\r\nDS3231_RTC_f103-19 v0.2.0\r\nUART1 for debug started on speed 115200\r\n");
+	sprintf(DataChar,"\r\nDS3231_RTC_f103-2019 v0.3.0\r\nUART1 for debug started on speed 115200\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	I2Cdev_init(&hi2c1);
@@ -129,8 +131,8 @@ int main(void)
 	HAL_RTC_SetTime( &hrtc, &TimeSt, RTC_FORMAT_BIN );
 	HAL_RTC_SetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
 
-	ds3231_PrintTime(ADR_I2C_DS3231, &TimeSt, &huart1);
-	ds3231_PrintDate(ADR_I2C_DS3231, &DateSt, &huart1);
+	ds3231_PrintTime(&TimeSt, &huart1);
+	ds3231_PrintDate(&DateSt, &huart1);
 
   /* USER CODE END 2 */
 
@@ -138,15 +140,27 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	sprintf(DataChar,"%d) ",  (int)counter_u32 );
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-	counter_u32++;
+	  if (ds3231_alarm_u8 == 1)
+	  {
 
-	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+			sprintf(DataChar,"%d) ",  (int)counter_u32 );
+			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+			counter_u32++;
 
-	ds3231_PrintTime(ADR_I2C_DS3231, &TimeSt, &huart1);
-	ds3231_PrintDate(ADR_I2C_DS3231, &DateSt, &huart1);
-	HAL_Delay(5000);
+			HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+
+//			ds3231_GetTime(ADR_I2C_DS3231, &TimeSt);
+//			ds3231_GetDate(ADR_I2C_DS3231, &DateSt);
+
+			HAL_RTC_GetTime( &hrtc, &TimeSt, RTC_FORMAT_BIN );
+			HAL_RTC_GetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
+
+			ds3231_PrintTime(&TimeSt, &huart1);
+			ds3231_PrintDate(&DateSt, &huart1);
+			HAL_Delay(500);
+			ds3231_alarm_u8 = 0;
+	  }
+
 
     /* USER CODE END WHILE */
 
