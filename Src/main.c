@@ -136,11 +136,11 @@ int main(void)
 	ds3231_PrintDate(&DateSt, &huart1);
 
 	ds3231_Alarm1_SetSeconds(ADR_I2C_DS3231, 0x36);
-	//ds3231_Alarm1_SetEverySeconds(ADR_I2C_DS3231, &huart1 );
+	//ds3231_Alarm1_SetEverySeconds(ADR_I2C_DS3231);
 	//ds3231_Alarm1_Stop(ADR_I2C_DS3231);
-	ds3231_Alarm1_ReadStatusBit(ADR_I2C_DS3231, &huart1);
+	//ds3231_Alarm1_ReadStatusBit(ADR_I2C_DS3231);
 
-	ds3231_Alarm1_ClearStatusBit(ADR_I2C_DS3231, &huart1);
+	ds3231_Alarm1_ClearStatusBit(ADR_I2C_DS3231);
 
   /* USER CODE END 2 */
 
@@ -167,9 +167,9 @@ int main(void)
 
 			HAL_Delay(100);
 			ds3231_alarm_u8 = 0;
-			//ds3231_Alarm1_SetEverySeconds(ADR_I2C_DS3231, &huart1 );
-			ds3231_Alarm1_ReadStatusBit(ADR_I2C_DS3231, &huart1);
-			ds3231_Alarm1_ClearStatusBit(ADR_I2C_DS3231, &huart1);
+			//ds3231_Alarm1_SetEverySeconds(ADR_I2C_DS3231);
+			ds3231_Alarm1_ReadStatusBit(ADR_I2C_DS3231);
+			ds3231_Alarm1_ClearStatusBit(ADR_I2C_DS3231);
 	  }
 
 
