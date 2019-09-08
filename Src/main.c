@@ -64,6 +64,8 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+volatile uint8_t ds3231_alarm_u8 = 0 ;
+
 /* USER CODE END 0 */
 
 /**
@@ -107,21 +109,22 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-	sprintf(DataChar,"\r\nDS3231_RTC_f103-19 v0.2.0\r\nUART1 for debug started on speed 115200\r\n");
+	sprintf(DataChar,"\r\nDS3231_RTC_f103-2019 v1.2.0 (Alarm)\r\nUART1 for debug started on speed 115200\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	I2Cdev_init(&hi2c1);
 	I2C_ScanBusFlow(&hi2c1, &huart1);
 
-		//	TimeSt.Seconds = 0x03 ;
-		//	TimeSt.Minutes = 0x40 ;
-		//	TimeSt.Hours   = 0x14 ;
-		//	ds3231_SetTime(ADR_I2C_DS3231, &TimeSt);
-		//
-		//	DateSt.Date  = 0x06 ;
-		//	DateSt.Month = 0x09 ;
-		//	DateSt.Year  = 0x19 ;
-		//	ds3231_SetDate(ADR_I2C_DS3231, &DateSt);
+//			TimeSt.Seconds = 0x03 ;
+//			TimeSt.Minutes = 0x44 ;
+//			TimeSt.Hours   = 0x21 ;
+//			ds3231_SetTime(ADR_I2C_DS3231, &TimeSt);
+//
+//			DateSt.Date		= 0x07 ;
+//			DateSt.Month	= 0x09 ;	// ???	The century	bit (bit 7 of the month register) is toggled when the years	register overflows from 99 to 00 ???
+//			DateSt.Year		= 0x19 ;
+//			DateSt.WeekDay	= 0x06 ;
+//			ds3231_SetDate(ADR_I2C_DS3231, &DateSt);
 
 	ds3231_GetTime(ADR_I2C_DS3231, &TimeSt);
 	ds3231_GetDate(ADR_I2C_DS3231, &DateSt);
@@ -129,8 +132,12 @@ int main(void)
 	HAL_RTC_SetTime( &hrtc, &TimeSt, RTC_FORMAT_BIN );
 	HAL_RTC_SetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
 
-	ds3231_PrintTime(ADR_I2C_DS3231, &TimeSt, &huart1);
-	ds3231_PrintDate(ADR_I2C_DS3231, &DateSt, &huart1);
+	ds3231_PrintTime(&TimeSt, &huart1);
+	ds3231_PrintDate(&DateSt, &huart1);
+
+	ds3231_Alarm1_SetSeconds(ADR_I2C_DS3231, 0x00);
+	//ds3231_Alarm1_SetEverySeconds(ADR_I2C_DS3231);
+	ds3231_Alarm1_ClearStatusBit(ADR_I2C_DS3231);
 
   /* USER CODE END 2 */
 
@@ -138,15 +145,27 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	sprintf(DataChar,"%d) ",  (int)counter_u32 );
-	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
-	counter_u32++;
+	  if (ds3231_alarm_u8 == 1)
+	  {
+			sprintf(DataChar,"%d) ",  (int)counter_u32 );
+			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
+			counter_u32++;
 
-	HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+			HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
 
-	ds3231_PrintTime(ADR_I2C_DS3231, &TimeSt, &huart1);
-	ds3231_PrintDate(ADR_I2C_DS3231, &DateSt, &huart1);
-	HAL_Delay(5000);
+			ds3231_GetTime(ADR_I2C_DS3231, &TimeSt);
+			ds3231_GetDate(ADR_I2C_DS3231, &DateSt);
+
+//			HAL_RTC_GetTime( &hrtc, &TimeSt, RTC_FORMAT_BIN );
+//			HAL_RTC_GetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
+
+			ds3231_PrintTime(&TimeSt, &huart1);
+			ds3231_PrintDate(&DateSt, &huart1);
+
+			//	HAL_Delay(50);
+			ds3231_Alarm1_ClearStatusBit(ADR_I2C_DS3231);
+			ds3231_alarm_u8 = 0;
+	  }
 
     /* USER CODE END WHILE */
 
