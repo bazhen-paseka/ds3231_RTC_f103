@@ -109,7 +109,7 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-	sprintf(DataChar,"\r\nDS3231_RTC_f103-2019 v0.4.0 (Alarm)\r\nUART1 for debug started on speed 115200\r\n");
+	sprintf(DataChar,"\r\nDS3231_RTC_f103-2019 v1.2.0 (Alarm)\r\nUART1 for debug started on speed 115200\r\n");
 	HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 
 	I2Cdev_init(&hi2c1);
@@ -135,9 +135,8 @@ int main(void)
 	ds3231_PrintTime(&TimeSt, &huart1);
 	ds3231_PrintDate(&DateSt, &huart1);
 
-	ds3231_Alarm1_SetSeconds(ADR_I2C_DS3231, 0x36);
+	ds3231_Alarm1_SetSeconds(ADR_I2C_DS3231, 0x00);
 	//ds3231_Alarm1_SetEverySeconds(ADR_I2C_DS3231);
-	//ds3231_Alarm1_Stop(ADR_I2C_DS3231);
 	ds3231_Alarm1_ClearStatusBit(ADR_I2C_DS3231);
 
   /* USER CODE END 2 */
@@ -163,11 +162,10 @@ int main(void)
 			ds3231_PrintTime(&TimeSt, &huart1);
 			ds3231_PrintDate(&DateSt, &huart1);
 
-			HAL_Delay(100);
-			ds3231_alarm_u8 = 0;
+			//	HAL_Delay(50);
 			ds3231_Alarm1_ClearStatusBit(ADR_I2C_DS3231);
+			ds3231_alarm_u8 = 0;
 	  }
-
 
     /* USER CODE END WHILE */
 
