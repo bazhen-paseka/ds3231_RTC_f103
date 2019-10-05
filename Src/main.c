@@ -31,6 +31,8 @@
 #include <string.h>
 #include "i2c_techmaker_sm.h"
 #include "ds3231_sm.h"
+	#include <string.h>
+	#include <stdio.h>
 
 /* USER CODE END Includes */
 
