@@ -1,12 +1,12 @@
 /**
   ******************************************************************************
-  * File Name          : RTC.c
-  * Description        : This file provides code for the configuration
-  *                      of the RTC instances.
+  * @file    rtc.c
+  * @brief   This file provides code for the configuration
+  *          of the RTC instances.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -32,7 +32,7 @@ void MX_RTC_Init(void)
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef DateToUpdate = {0};
 
-  /** Initialize RTC Only 
+  /** Initialize RTC Only
   */
   hrtc.Instance = RTC;
   hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
@@ -46,7 +46,7 @@ void MX_RTC_Init(void)
     
   /* USER CODE END Check_RTC_BKUP */
 
-  /** Initialize RTC and set the Time and Date 
+  /** Initialize RTC and set the Time and Date
   */
   sTime.Hours = 0x0;
   sTime.Minutes = 0x0;
@@ -101,7 +101,7 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
   /* USER CODE END RTC_MspDeInit 1 */
   }
-} 
+}
 
 /* USER CODE BEGIN 1 */
 
