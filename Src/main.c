@@ -17,7 +17,6 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "i2c.h"
@@ -86,7 +85,6 @@ int main(void)
 	RTC_DateTypeDef DateSt;
 
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -131,14 +129,14 @@ int main(void)
 	ds3231_GetTime(ADR_I2C_DS3231, &TimeSt);
 	ds3231_GetDate(ADR_I2C_DS3231, &DateSt);
 
-	HAL_RTC_SetTime( &hrtc, &TimeSt, RTC_FORMAT_BIN );
-	HAL_RTC_SetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
+//	HAL_RTC_SetTime( &hrtc, &TimeSt, RTC_FORMAT_BIN );
+//	HAL_RTC_SetDate( &hrtc, &DateSt, RTC_FORMAT_BIN );
 
 	ds3231_PrintTime(&TimeSt, &huart1);
 	ds3231_PrintDate(&DateSt, &huart1);
 
-	ds3231_Alarm1_SetSeconds(ADR_I2C_DS3231, 0x00);
-	//ds3231_Alarm1_SetEverySeconds(ADR_I2C_DS3231);
+	//ds3231_Alarm1_SetSeconds(ADR_I2C_DS3231, 0x00);
+	ds3231_Alarm1_SetEverySeconds(ADR_I2C_DS3231);
 	ds3231_Alarm1_ClearStatusBit(ADR_I2C_DS3231);
 
   /* USER CODE END 2 */
@@ -149,7 +147,7 @@ int main(void)
   {
 	  if (ds3231_alarm_u8 == 1)
 	  {
-			sprintf(DataChar,"%d) ",  (int)counter_u32 );
+			sprintf(DataChar,"\r\n%d) ",  (int)counter_u32 );
 			HAL_UART_Transmit(&huart1, (uint8_t *)DataChar, strlen(DataChar), 100);
 			counter_u32++;
 
@@ -186,12 +184,12 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
@@ -200,7 +198,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -214,7 +212,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_HSE_DIV128;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -247,7 +245,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
